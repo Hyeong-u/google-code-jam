@@ -4,6 +4,7 @@
 #
 #
 # ==============================================================================
+import itertools
 
 
 def move(x, y, direction):
@@ -19,14 +20,28 @@ def get_reverse_direction(direction):
     return reverse_direction.get(direction)
 
 
-def back_track(rival_directions, rival_paths, inter_idx, answer):
-    x, y = rival_paths[inter_idx]
-    next_direction = answer[x + y]
-    x, y = move(x, y, next_direction)
-    next_direction = get_reverse_direction(answer[x + y])
-    answer[x + y] = next_direction
-    x, y = move(x, y, next_direction)
-    return x, y
+def make_candidates(n):
+    elements = "E" * (n-1) + "S" * (n-1)
+    all_candidates = itertools.permutations(elements)
+    candidates = set()
+    for c in all_candidates:
+        candidates.add("".join(c))
+
+    return candidates
+
+
+def find_answer(candidates, rival_directions, rival_paths):
+    for candidate in candidates:
+        x, y, r_x, r_y = 0, 0, 0, 0
+        for direction in candidate:
+            r_x, r_y = rival_paths[x + y]
+            rival_direction = rival_directions[x+y]
+            if x == r_x and y == r_y and direction == rival_direction:
+                break
+            else:
+                x, y = move(x, y, direction)
+        else:
+            return candidate
 
 
 t = int(input())
@@ -34,7 +49,9 @@ t = int(input())
 for test in range(1, t + 1):
     n = int(input())
     rival_directions = input()
+    candidates = make_candidates(n)
     rival_paths = [[0, 0]]
+    answer = ""
     for direction in rival_directions:
         x, y = rival_paths[-1]
         if direction == "E":
@@ -42,31 +59,5 @@ for test in range(1, t + 1):
         else:
             path = [x, y + 1]
         rival_paths.append(path)
-    intersection_indices = []
-    x, y = 0, 0
-    answer = [0 for x in rival_directions]
-    total = 2 * n - 2
-    answer = ["X"] * total
-    reverse_direction = {"S": "E", "E": "S"}
-    while x + y < total:
-        idx = x + y
-        r_x, r_y = rival_paths[idx]
-        rival_direction = rival_directions[r_x + r_y]
-        next_direction = reverse_direction[rival_direction]
-        if x == r_x and y == r_y:
-            if (rival_direction == "S" and x + 1 == n) or (rival_direction == "E" and y + 1 == n):
-                x, y = back_track(rival_directions, rival_paths,
-                                  intersection_indices.pop(), answer)
-            else:
-                intersection_indices.append(idx)
-                answer[idx] = next_direction
-                x, y = move(x, y, next_direction)
-            continue
-        if x < y:
-            next_direction = "E"
-        else:
-            next_direction = "S"
-        answer[x + y] = next_direction
-        x, y = move(x, y, next_direction)
-    answer = ''.join(answer)
+    answer = find_answer(candidates, rival_directions, rival_paths)
     print("Case #{test}: {answer}".format(test=test, answer=answer))
