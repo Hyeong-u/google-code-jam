@@ -6,37 +6,27 @@
 # ==============================================================================
 
 
-def move(location, direction):
+def move(x, y, direction):
     if direction == "E":
-        location[0] += 1
+        x += 1
     else:
-        location[1] += 1
-    return
+        y += 1
+    return x, y
 
 
-def get_direction(current_location, rival_location, rival_direction, n):
+def get_reverse_direction(direction):
     reverse_direction = {"S": "E", "E": "S"}
-    if current_location == rival_location:
-        next_direction = reverse_direction[rival_direction]
-        move(current_location, next_direction)
-        move(rival_location, rival_direction)
-        return next_direction
+    return reverse_direction.get(direction)
 
-    move(rival_location, rival_direction)
-    if current_location[0] == n - 1:
-        next_direction = "S"
-        move(current_location, next_direction)
-        return next_direction
-    elif current_location[1] == n - 1:
-        next_direction = "E"
-        move(current_location, next_direction)
-        return next_direction
-    elif current_location[0] > current_location[1]:
-        next_direction = "S"
-    else:
-        next_direction = "E"
-    move(current_location, next_direction)
-    return next_direction
+
+def back_track(rival_directions, rival_paths, inter_idx, answer):
+    x, y = rival_paths[inter_idx]
+    next_direction = answer[x + y]
+    x, y = move(x, y, next_direction)
+    next_direction = get_reverse_direction(answer[x + y])
+    answer[x + y] = next_direction
+    x, y = move(x, y, next_direction)
+    return x, y
 
 
 t = int(input())
@@ -44,10 +34,39 @@ t = int(input())
 for test in range(1, t + 1):
     n = int(input())
     rival_directions = input()
-    current_location = [0, 0]
-    rival_location = [0, 0]
-    answer = ""
+    rival_paths = [[0, 0]]
     for direction in rival_directions:
-        answer += get_direction(current_location, rival_location, direction, n)
-
+        x, y = rival_paths[-1]
+        if direction == "E":
+            path = [x + 1, y]
+        else:
+            path = [x, y + 1]
+        rival_paths.append(path)
+    intersection_indices = []
+    x, y = 0, 0
+    answer = [0 for x in rival_directions]
+    total = 2 * n - 2
+    answer = ["X"] * total
+    reverse_direction = {"S": "E", "E": "S"}
+    while x + y < total:
+        idx = x + y
+        r_x, r_y = rival_paths[idx]
+        rival_direction = rival_directions[r_x + r_y]
+        next_direction = reverse_direction[rival_direction]
+        if x == r_x and y == r_y:
+            if (rival_direction == "S" and x + 1 == n) or (rival_direction == "E" and y + 1 == n):
+                x, y = back_track(rival_directions, rival_paths,
+                                  intersection_indices.pop(), answer)
+            else:
+                intersection_indices.append(idx)
+                answer[idx] = next_direction
+                x, y = move(x, y, next_direction)
+            continue
+        if x < y:
+            next_direction = "E"
+        else:
+            next_direction = "S"
+        answer[x + y] = next_direction
+        x, y = move(x, y, next_direction)
+    answer = ''.join(answer)
     print("Case #{test}: {answer}".format(test=test, answer=answer))
